@@ -26,6 +26,20 @@ Personal agents, skills, scripts and mods for Claude Code.
 | `mods/verify-before-done` | Adds the "verify, then `Проверка: …`" rule to every prompt. |
 | `mods/task-cost` | Band with tokens and ≈ USD per task; today's total in the status line. |
 
+## Windows: Claude Code on your computer, one command
+
+In PowerShell (not as administrator):
+
+```powershell
+irm https://raw.githubusercontent.com/rixstilla2007-cmyk/claude-toolkit/main/setup-windows.ps1 | iex
+```
+
+It installs Git for Windows (winget) and Claude Code (official installer)
+when missing, clones this toolkit to `%USERPROFILE%\claude-toolkit` (or
+updates it), installs the agents and skills, and creates
+`%USERPROFILE%\claude-work`. Then: `cd $HOME\claude-work; claude`.
+Run the same command again to update.
+
 ## Install
 
 For every project on this computer (copies into `~/.claude`; files that
