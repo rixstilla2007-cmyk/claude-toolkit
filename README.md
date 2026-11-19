@@ -20,6 +20,7 @@ Personal agents, skills, scripts and mods for Claude Code.
 | `.claude/skills/openai-api-key` | Setting `OPENAI_API_KEY` safely on Windows, macOS, Linux. |
 | `.claude/skills/hire-agent` | When and how to create ("hire") a new specialist agent. |
 | `.claude/skills/assemble-team` | Lead a team: split a task, pick or hire agents, run in parallel, verify, merge. |
+| `.claude/skills/ig-*` | 13 Instagram skills (`/ig-reel`, `/ig-caption`, `/ig-human`, `/ig-viral`, …) from [instagram-agent-skill](https://github.com/Jakeschincariol/instagram-agent-skill) (MIT, `third_party/instagram-agent-skill`). They write; you post. Their Python tools need Python 3. Fill in `third_party/instagram-agent-skill/voice.md` and copy it to `~/.claude/instagram/voice.md`. |
 | `scripts/hire_agent.py` | `hire` creates a checked agent file (`--install` copies it to `~/.claude/agents`); `list` shows the team; `check` validates every agent. Tests: `pytest tests`. |
 | `scripts/verify.sh` | Finds how a project tests itself and runs it (mod, npm/pnpm/yarn/bun, pytest, cargo, go, make). Exit 3 = nothing found. |
 | `mods/live-diff` | Pane: files being edited, +/− lines, click for the diff. |
