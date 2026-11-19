@@ -18,6 +18,9 @@ Personal agents, skills, scripts and mods for Claude Code.
 | `.claude/skills/research-brief` | Research method and answer format. |
 | `.claude/skills/mod-dev` | Mod checklist and the mods in this repo. |
 | `.claude/skills/openai-api-key` | Setting `OPENAI_API_KEY` safely on Windows, macOS, Linux. |
+| `.claude/skills/hire-agent` | When and how to create ("hire") a new specialist agent. |
+| `.claude/skills/assemble-team` | Lead a team: split a task, pick or hire agents, run in parallel, verify, merge. |
+| `scripts/hire_agent.py` | `hire` creates a checked agent file (`--install` copies it to `~/.claude/agents`); `list` shows the team; `check` validates every agent. Tests: `pytest tests`. |
 | `scripts/verify.sh` | Finds how a project tests itself and runs it (mod, npm/pnpm/yarn/bun, pytest, cargo, go, make). Exit 3 = nothing found. |
 | `mods/live-diff` | Pane: files being edited, +/− lines, click for the diff. |
 | `mods/verify-before-done` | Adds the "verify, then `Проверка: …`" rule to every prompt. |
