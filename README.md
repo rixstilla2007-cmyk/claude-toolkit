@@ -25,10 +25,19 @@ Personal agents, skills, scripts and mods for Claude Code.
 
 ## Install
 
-For every project on this computer (copies into `~/.claude`):
+For every project on this computer (copies into `~/.claude`; files that
+differ are kept as `*.bak`):
+
+macOS / Linux / Git Bash / WSL:
 
 ```bash
 ./install.sh
+```
+
+Windows PowerShell (5.1 or 7), from the toolkit folder:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
 Or only for one project: copy `.claude/` into that project's root.
