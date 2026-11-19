@@ -1,0 +1,1 @@
+{ "name": "verify-before-done", "version": "0.1.0", "description": "Adds a rule to every prompt: verify the result before saying done, and say in one line how" }

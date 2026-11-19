@@ -1,0 +1,1 @@
+{ "name": "task-cost", "version": "0.1.0", "description": "After each task: a band with its tokens and approximate API cost; today's total in the status line", "types": "./types/index.d.ts" }

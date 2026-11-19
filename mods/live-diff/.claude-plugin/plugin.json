@@ -1,0 +1,1 @@
+{ "name": "live-diff", "version": "0.1.0", "description": "Pane beside the chat: files Claude is changing, lines added/removed, and the diff on click", "types": "./types/index.d.ts" }
