@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { makeFixture, serverSuite } from './server-suite.mjs';
@@ -23,6 +25,15 @@ test('powershell server', { skip: !pwsh && 'pwsh is not on PATH' }, async t => {
       child.on('exit', code => reject(new Error(`exited ${code}: ${out}`)));
     });
     await serverSuite(t, `http://127.0.0.1:${port}`);
+    // On Windows http.sys may accept a LAN connection that claims Host: localhost. A request whose
+    // source address differs from the listener's (127.0.0.2 here) stands in for that machine.
+    await t.test('request from another address is refused', async () => {
+      const r = await new Promise((resolve, reject) => http.get({ host: '127.0.0.1', port, path: '/api/sessions', localAddress: '127.0.0.2', headers: { Host: `localhost:${port}` } }, res => {
+        let body = ''; res.setEncoding('utf8').on('data', d => body += d).on('end', () => resolve({ status: res.statusCode, body }));
+      }).on('error', reject));
+      assert.equal(r.status, 403, r.body.slice(0, 80));
+      assert.doesNotMatch(r.body, /proj-a/);
+    });
   } finally {
     child.kill();
   }

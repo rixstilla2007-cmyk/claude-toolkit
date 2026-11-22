@@ -54,7 +54,9 @@ function Get-Sessions {
         $subs = @()
         if (Test-Path -LiteralPath $subDir -PathType Container) {
             foreach ($s in Get-ChildItem -LiteralPath $subDir -File -Filter 'agent-*.jsonl' -ErrorAction SilentlyContinue) {
-                if ($s.Name.EndsWith('.jsonl')) { $subs += [ordered]@{ file = "$rel/$($s.Name)"; size = $s.Length } }
+                if ($s.Name.EndsWith('.jsonl')) {
+                    $subs += [ordered]@{ file = "$rel/$($s.Name)"; size = $s.Length; mtime = (New-Object DateTimeOffset($s.LastWriteTimeUtc)).ToUnixTimeMilliseconds() }
+                }
             }
         }
         $out += [ordered]@{ file = $m.file; project = $m.project; mtime = $m.mtime; size = $m.size; subs = $subs }
@@ -132,6 +134,8 @@ try {
         $ctx = $listener.GetContext()
         try {
             $req = $ctx.Request
+            # http.sys can accept LAN connections for a localhost prefix; answer only this computer.
+            if (-not $req.IsLocal) { Send $ctx 403 '{"error":"remote"}'; continue }
             if ($hosts -notcontains $req.Headers['Host']) { Send $ctx 403 '{"error":"host"}'; continue }
             if ($req.HttpMethod -ne 'GET') { Send $ctx 405 '{"error":"method"}'; continue }
             $path = $req.Url.AbsolutePath

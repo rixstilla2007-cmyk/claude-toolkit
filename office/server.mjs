@@ -38,7 +38,7 @@ async function listSessions(root) {
     for (const f of await entries(path.join(root, rel))) {
       if (!f.isFile() || !f.name.startsWith('agent-') || !f.name.endsWith('.jsonl')) continue;
       const st = await sizeOf(path.join(root, rel, f.name));
-      if (st) m.subs.push({ file: `${rel}/${f.name}`, size: st.size });
+      if (st) m.subs.push({ file: `${rel}/${f.name}`, size: st.size, mtime: st.mtimeMs });
     }
   }
   return top;

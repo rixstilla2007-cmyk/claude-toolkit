@@ -54,10 +54,11 @@
   const blocks = e => (e.message && Array.isArray(e.message.content)) ? e.message.content : [];
 
   function isPrompt(e) {
-    if (e.type !== 'user' || e.isMeta || !e.message) return false;
+    if (e.type !== 'user' || e.isMeta || e.isCompactSummary || e.isVisibleInTranscriptOnly || !e.message) return false;
     if (blocks(e).some(b => b && b.type === 'tool_result')) return false;
     const s = textOf(e.message.content).trim();
-    return !!s && !/^<(command-|local-command|task-notification)/.test(s);
+    // Claude Code's own lines: slash commands, background-task reports, ! shell mode, Esc.
+    return !!s && !/^(<(command-|local-command|task-notification|bash-|user-memory-input)|\[Request interrupted)/.test(s);
   }
 
   function createFeed() {
@@ -72,6 +73,12 @@
       w.log.push({t, text: d.status, tool: d.tool || ''});
     }
     function finish(w, t) { if (w.kind !== 'done') set(w, {kind: 'done', status: 'Готово'}, t); }
+    // Main stopped: the task is done only when no agent is still working in the background.
+    function rest(t) {
+      if (workers.some(w => w !== me && w.kind !== 'done')) return set(me, {kind: 'idle', status: 'Жду агентов'}, t);
+      set(me, {kind: 'idle', status: 'Жду задачу'}, t);
+      if (task) task.done = true;
+    }
     function applySub(w, e) {
       if (w.kind === 'done' || e.type !== 'assistant') return;
       const t = timeOf(e);
@@ -106,6 +113,7 @@
         for (const b of blocks(e)) {
           if (!b || b.type !== 'tool_use') continue;
           open.add(b.id);
+          if (task) task.done = false;
           const input = b.input || {};
           if (AGENT_TOOLS.has(b.name)) {
             const type = input.subagent_type || 'general-purpose';
@@ -118,12 +126,15 @@
             for (const file of [...waiting.keys()]) tryLink(file);
           } else set(me, describeTool(b.name, input), t);
         }
-        if (e.message && e.message.stop_reason === 'end_turn' && open.size === 0) {
-          set(me, {kind: 'idle', status: 'Жду задачу'}, t);
-          if (task) task.done = true;
-        }
+        if (e.message && e.message.stop_reason === 'end_turn' && open.size === 0) rest(t);
         return;
       }
+      // A background agent reports back with the id of the Agent call that started it:
+      // as a user line when the main session is idle, as a queued_command attachment mid-turn.
+      const queued = e.attachment && e.attachment.type === 'queued_command' ? String(e.attachment.prompt || '') : '';
+      const text = (textOf(e.message && e.message.content) || queued).trim();
+      const note = /^<task-notification>/.test(text) && /<tool-use-id>([^<]+)<\/tool-use-id>/.exec(text);
+      if (note && byCall.has(note[1])) finish(byCall.get(note[1]), t);
       for (const b of blocks(e)) {
         if (!b || b.type !== 'tool_result') continue;
         open.delete(b.tool_use_id);
@@ -132,6 +143,7 @@
         if (r.agentId) { byAgentId.set(r.agentId, w); for (const file of [...waiting.keys()]) tryLink(file); }
         if (r.status !== 'async_launched') finish(w, t);
       }
+      if (/^\[Request interrupted/.test(text)) { open.clear(); rest(t); }
     }
 
     function addSub(file, e) {
@@ -151,7 +163,19 @@
     return {addMain, addSub, snapshot};
   }
 
-  const api = {parseLines, describeTool, roomFor, createFeed};
+  // Which session «Последняя» shows: the pinned one; else the current one while it is still working
+  // and wrote in the last 10 minutes; else the one that wrote last, counting its subagent files.
+  const QUIET = 10 * 60 * 1000;
+  const activity = s => Math.max(s.mtime, ...(s.subs || []).map(x => x.mtime || 0));
+  function pickSession(list, {file = '', pinned = '', busy = false, now = Date.now()} = {}) {
+    const pin = pinned && list.find(s => s.file === pinned);
+    if (pin) return pin;
+    const cur = list.find(s => s.file === file);
+    if (cur && busy && now - activity(cur) < QUIET) return cur;
+    return list.reduce((a, b) => activity(b) > activity(a) ? b : a, list[0]);
+  }
+
+  const api = {parseLines, describeTool, roomFor, createFeed, pickSession};
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.OfficeFeed = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -304,6 +304,7 @@ const LIVE = {feed: null, file: '', project: '', pinned: '', offsets: {}, snap: 
 const ROSTER = {};
 AG.forEach(a => { if (a.type !== 'main') ROSTER[a.type] = a.id; });
 function newCast(id, type, name, extra) {
+  if (IDX[id] != null) { AG[IDX[id]].gone = false; return id; } // back on a session seen before: reuse its figure
   const r = ROSTER[type] != null ? AG[IDX[ROSTER[type]]] : null;
   AG.push({id, type, name, extra, role: r ? r.role : 'Субагент ' + type + '.', shirt: r ? r.shirt : colorOf(type), hair: r ? r.hair : '#2b2b2b'});
   reindex(); S[id] = blank();
@@ -383,10 +384,13 @@ async function poll() {
     const list = await getJSON('/api/sessions');
     renderSessions(list);
     if (!list.length) { if (mode !== 'demo') setMode('demo', 'Демо: журналов Claude Code пока нет'); return; }
-    const sess = list.find(x => x.file === LIVE.pinned) || list[0];
+    const busy = !!(LIVE.snap && LIVE.snap.task && !LIVE.snap.task.done);
+    const sess = OfficeFeed.pickSession(list, {file: LIVE.file, pinned: LIVE.pinned, busy});
     if (sess.file !== LIVE.file) switchSession(sess);
-    await readNew(sess.file, e => LIVE.feed.addMain(e));
-    for (const sub of sess.subs) await readNew(sub.file, e => LIVE.feed.addSub(sub.file, e));
+    // Only files that grew since the last read: a long session can have a hundred subagent files.
+    const grew = f => f.size > (LIVE.offsets[f.file] || 0);
+    if (grew(sess)) await readNew(sess.file, e => LIVE.feed.addMain(e));
+    for (const sub of sess.subs) if (grew(sub)) await readNew(sub.file, e => LIVE.feed.addSub(sub.file, e));
     if (mode !== 'live') setMode('live');
     applySnapshot(LIVE.feed.snapshot());
     LIVE.ok = true;

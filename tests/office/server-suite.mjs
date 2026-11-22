@@ -50,6 +50,7 @@ export async function serverSuite(t, base) {
     assert.equal(list[0].file, 'proj-a/s1.jsonl');
     assert.equal(list[0].project, 'proj-a');
     assert.deepEqual(list[0].subs.map(s => s.file), ['proj-a/s1/subagents/agent-a1.jsonl']);
+    assert.ok(list[0].subs[0].mtime > 0, 'sub mtime');
     for (let i = 1; i < list.length; i++) assert.ok(list[i - 1].mtime >= list[i].mtime);
   });
 

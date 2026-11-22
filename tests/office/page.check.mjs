@@ -27,6 +27,8 @@ const server = await startServer({ root, dir: officeDir, port: 47400 });
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
 const errors = [];
+let reads = 0;
+page.on('request', r => { if (r.url().includes('/api/read')) reads++; });
 page.on('pageerror', e => errors.push(e.message));
 page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 if (process.env.THREE_DIR) {
@@ -57,6 +59,23 @@ try {
   add(main, call('c2', 'Agent', { subagent_type: 'researcher', description: 'Второй поиск', prompt: 'Ещё' }));
   await expectRow('researcher #2', 'Работает');
 
+  // Another session writes while this one works: «Последняя» stays here.
+  const other = path.join(root, '-home-me-other', 'sess2.jsonl');
+  fs.mkdirSync(path.dirname(other), { recursive: true });
+  add(other, { type: 'user', message: { role: 'user', content: 'Другая задача' } });
+  await page.waitForTimeout(2500);
+  if (!(await page.locator('#task').textContent()).includes('Составь план')) throw new Error('auto mode left the working session');
+  console.log('ok  auto mode stays on the working session');
+
+  // Switching to the other session and back must not add a second copy of researcher #2.
+  await page.selectOption('#session', '-home-me-other/sess2.jsonl');
+  await page.locator('#task', { hasText: 'Другая задача' }).waitFor({ timeout: 5000 });
+  await page.selectOption('#session', '-home-me-work/sess1.jsonl');
+  await expectRow('researcher #2', 'Работает');
+  const copies = await row('researcher #2').count();
+  if (copies !== 1) throw new Error('researcher #2 rows after switching back: ' + copies);
+  console.log('ok  no duplicate copy after switching back');
+
   add(sub, call('s2', 'mcp__vidIQ__vidiq_trending_videos', {}));
   await expectRow('researcher', 'Внешний сервис');
 
@@ -72,6 +91,10 @@ try {
   await expectRow('Я \\(Claude\\)', 'Жду задачу');
 
   await page.waitForTimeout(1500);
+  const before = reads;
+  await page.waitForTimeout(2500);
+  if (reads !== before) throw new Error(`${reads - before} reads while nothing changed`);
+  console.log('ok  no reads while nothing changed');
   await page.screenshot({ path: shot });
   console.log('screenshot:', shot);
 
