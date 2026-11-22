@@ -26,6 +26,7 @@ Personal agents, skills, scripts and mods for Claude Code.
 | `mods/live-diff` | Pane: files being edited, +/− lines, click for the diff. |
 | `mods/verify-before-done` | Adds the "verify, then `Проверка: …`" rule to every prompt. |
 | `mods/task-cost` | Band with tokens and ≈ USD per task; today's total in the status line. |
+| `office/` | «Офис Claude»: a 3D office in the browser where you watch the main session and every subagent work, live. Read-only. See below. |
 
 ## Windows: Claude Code on your computer, one command
 
@@ -40,6 +41,33 @@ when missing, clones this toolkit to `%USERPROFILE%\claude-toolkit` (or
 updates it), installs the agents and skills, and creates
 `%USERPROFILE%\claude-work`. Then: `cd $HOME\claude-work; claude`.
 Run the same command again to update.
+
+## Agent office: watch Claude work
+
+`office/` is a 3D office in the browser. The main session sits in the
+director's office on the 4th floor; each subagent walks to its room (library,
+open space, meeting room, review pod), MCP calls light up the screens on the
+1st floor, and the panel lists who is doing what. Click a person (or a row)
+to follow them and see every step.
+
+It only **reads** the transcripts Claude Code already writes to
+`~/.claude/projects` (or `$CLAUDE_CONFIG_DIR/projects`), shows them at
+`http://localhost:4545/` to this computer only, and changes nothing.
+
+- Windows: double-click `office\start-office.cmd`
+  (`%USERPROFILE%\claude-toolkit\office\start-office.cmd` after the
+  one-command setup). Keep its window open; close it to stop.
+- macOS / Linux: `node office/server.mjs`, then open the address it prints.
+
+Then work in Claude Code as usual. The office follows the most recent
+session; pick another in «Сессия». Add `?demo` to the address for a demo.
+
+Limits: needs a Claude Code version that writes `subagents/` folders; the 3D
+library (Three.js) loads from jsdelivr, so it needs internet; only Claude
+Code on this computer, not cloud sessions.
+
+Tests: `node --test tests/office/*.test.mjs` (the PowerShell server test runs
+when `pwsh` is on PATH) and `node tests/office/page.check.mjs` (Playwright).
 
 ## Install
 
