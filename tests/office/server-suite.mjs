@@ -82,10 +82,12 @@ export async function serverSuite(t, base) {
     assert.equal(missing.status, 404);
   });
 
-  await t.test('wrong Host is 403', async () => {
+  await t.test('wrong Host is refused', async () => {
     const port = new URL(base).port;
     const r = await get(base, '/api/sessions', { Host: `evil.example:${port}` });
-    assert.equal(r.status, 403);
+    // Node answers 403 itself; HttpListener refuses a host it does not serve before our code runs (400/404).
+    assert.ok([400, 403, 404].includes(r.status), String(r.status));
+    assert.doesNotMatch(r.body, /proj-a/);
   });
 
   await t.test('serves index and feed.js', async () => {
