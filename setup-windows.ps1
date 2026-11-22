@@ -77,4 +77,6 @@ Write-Host "  cd `"$work`""
 Write-Host '  claude'
 Write-Host 'Sign in with your Claude account the first time.'
 Write-Host 'To get toolkit updates later: run this same command again.'
+Write-Host 'To watch Claude and its subagents at work, double-click:'
+Write-Host "  $toolkit\office\start-office.cmd"
 }
