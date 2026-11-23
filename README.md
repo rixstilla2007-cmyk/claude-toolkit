@@ -21,6 +21,14 @@ Personal agents, skills, scripts and mods for Claude Code.
 | `.claude/skills/hire-agent` | When and how to create ("hire") a new specialist agent. |
 | `.claude/skills/assemble-team` | Lead a team: split a task, pick or hire agents, run in parallel, verify, merge. |
 | `.claude/skills/ig-*` | 13 Instagram skills (`/ig-reel`, `/ig-caption`, `/ig-human`, `/ig-viral`, …) from [instagram-agent-skill](https://github.com/Jakeschincariol/instagram-agent-skill) (MIT, `third_party/instagram-agent-skill`). They write; you post. Their Python tools need Python 3. Fill in `third_party/instagram-agent-skill/voice.md` and copy it to `~/.claude/instagram/voice.md`. |
+| `.claude/skills/peredacha` | «Передача»: сжать разговор в `00 ПЕРЕДАЧА.md`, сделать `/clear` и продолжить в чистой сессии. |
+| `.claude/hooks/no_delete.py` | PreToolUse: blocks `rm`/`Remove-Item`/`del` outside Temp, `git clean`, `git reset --hard`, `git checkout --`, `git restore`, `git stash drop`, `git branch -D`, `robocopy /MIR`. |
+| `.claude/hooks/sekrety_git.py` | PreToolUse: refuses `git commit` / `git push` when the added lines hold an API key, token or private key. |
+| `.claude/hooks/razmer_konteksta.py` | UserPromptSubmit: one-line hint at ~180k / 250k tokens of context and after a pause over an hour (cache expired). |
+| `.claude/hooks/posle_szhatiya.py` | SessionStart (compact): after compaction, lists the files edited in the session. |
+| `user/CLAUDE.md` | Global rules (Russian, never delete, facts, saving the limit, Windows, compact instructions), installed as a marked block in `~/.claude/CLAUDE.md`. |
+| `user/settings-add.json` | Merged into `~/.claude/settings.json`: hooks, `cleanupPeriodDays: 3650`, no reading `.env`, `skillOverrides` (rare skills listed by name only — delete a line or use `/skills` to bring one back). |
+| `scripts/install_user.py` | Does that merge: your own values win, a hook already wired is not added twice, changed files are copied to `*.bak-<date>` first. |
 | `scripts/hire_agent.py` | `hire` creates a checked agent file (`--install` copies it to `~/.claude/agents`); `list` shows the team; `check` validates every agent. Tests: `pytest tests`. |
 | `scripts/verify.sh` | Finds how a project tests itself and runs it (mod, npm/pnpm/yarn/bun, pytest, cargo, go, make). Exit 3 = nothing found. |
 | `mods/live-diff` | Pane: files being edited, +/− lines, click for the diff. |
@@ -36,9 +44,10 @@ In PowerShell (not as administrator):
 irm https://raw.githubusercontent.com/rixstilla2007-cmyk/claude-toolkit/main/setup-windows.ps1 | iex
 ```
 
-It installs Git for Windows (winget) and Claude Code (official installer)
-when missing, clones this toolkit to `%USERPROFILE%\claude-toolkit` (or
-updates it), installs the agents and skills, and creates
+It installs Git for Windows and Python 3 (winget) and Claude Code (official
+installer) when missing, clones this toolkit to `%USERPROFILE%\claude-toolkit` (or
+updates it), installs the agents, skills and hooks, merges the settings and
+rules (see `user/`), and creates
 `%USERPROFILE%\claude-work`. Then: `cd $HOME\claude-work; claude`.
 Run the same command again to update.
 
@@ -71,8 +80,10 @@ when `pwsh` is on PATH) and `node tests/office/page.check.mjs` (Playwright).
 
 ## Install
 
-For every project on this computer (copies into `~/.claude`; files that
-differ are kept as `*.bak`):
+For every project on this computer (copies agents, skills and hooks into
+`~/.claude`; files that differ are kept as `*.bak`). With Python 3.10+ it then
+runs `scripts/install_user.py`, which wires the hooks into `settings.json` and
+adds the rules to `CLAUDE.md`; without Python it only warns:
 
 macOS / Linux / Git Bash / WSL:
 
@@ -86,7 +97,8 @@ Windows PowerShell (5.1 or 7), from the toolkit folder:
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-Or only for one project: copy `.claude/` into that project's root.
+Or only for one project: copy `.claude/` into that project's root (the hooks
+then stay unwired).
 
 The mods are loaded with `--plugin-dir`, one per mod:
 

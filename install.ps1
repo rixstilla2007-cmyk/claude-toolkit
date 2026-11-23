@@ -1,5 +1,6 @@
-# install.ps1 - copy this toolkit's agents and skills into ~/.claude on Windows
-# (existing files of the same name are backed up as *.bak first).
+# install.ps1 - copy this toolkit's agents, skills and hooks into ~/.claude on Windows
+# (existing files of the same name are backed up as *.bak first), then wire the
+# hooks, settings and CLAUDE.md rules with scripts\install_user.py (needs Python 3.10+).
 #
 # Run from the toolkit folder in PowerShell 5.1 or 7:
 #   powershell -ExecutionPolicy Bypass -File .\install.ps1
@@ -47,5 +48,31 @@ Get-ChildItem -LiteralPath (Join-Path $here '.claude\agents') -Filter '*.md' -Fi
 }
 Get-ChildItem -LiteralPath (Join-Path $here '.claude\skills') -Directory | ForEach-Object {
     Copy-Entry $_.FullName (Join-Path $dest "skills\$($_.Name)")
+}
+Get-ChildItem -LiteralPath (Join-Path $here '.claude\hooks') -Filter '*.py' -File | ForEach-Object {
+    Copy-Entry $_.FullName (Join-Path $dest "hooks\$($_.Name)")
+}
+
+function Find-Python {
+    # Full path of a real Python 3.10+, or $null. The Microsoft Store stub fails this check.
+    $ErrorActionPreference = 'Continue'
+    $check = 'import sys; print(sys.executable) if sys.version_info >= (3, 10) else sys.exit(1)'
+    if (Get-Command py -ErrorAction SilentlyContinue) {
+        $out = & py -3 -c $check 2>$null
+        if ($LASTEXITCODE -eq 0 -and $out -and (Test-Path -LiteralPath "$out".Trim())) { return "$out".Trim() }
+    }
+    if (Get-Command python -ErrorAction SilentlyContinue) {
+        $out = & python -c $check 2>$null
+        if ($LASTEXITCODE -eq 0 -and $out -and (Test-Path -LiteralPath "$out".Trim())) { return "$out".Trim() }
+    }
+    return $null
+}
+
+$py = Find-Python
+if ($py) {
+    & $py (Join-Path $here 'scripts\install_user.py') --dest $dest
+    if ($LASTEXITCODE -ne 0) { throw "install_user.py failed with exit code $LASTEXITCODE" }
+} else {
+    Write-Warning 'Python 3.10+ not found: hooks copied but not wired; settings.json and CLAUDE.md left as they are. Install Python (python.org) and run this again.'
 }
 Write-Host "done: restart Claude Code (or start a new session) to pick up new agents"

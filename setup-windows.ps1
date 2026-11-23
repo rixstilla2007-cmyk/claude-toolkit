@@ -6,9 +6,11 @@
 # What it does, skipping what is already there:
 #   1. installs Git for Windows with winget (Claude Code needs it)
 #   2. installs Claude Code with the official installer from claude.ai
-#   3. clones this toolkit to %USERPROFILE%\claude-toolkit (or updates it)
-#   4. copies the toolkit's agents and skills into %USERPROFILE%\.claude
-#   5. creates the work folder %USERPROFILE%\claude-work
+#   3. installs Python 3 with winget for the current user (the hooks need it)
+#   4. clones this toolkit to %USERPROFILE%\claude-toolkit (or updates it)
+#   5. installs the toolkit's agents, skills and hooks into %USERPROFILE%\.claude,
+#      merges its settings into settings.json and its rules into CLAUDE.md
+#   6. creates the work folder %USERPROFILE%\claude-work
 # It changes nothing else and never needs administrator rights itself
 # (winget may show its own prompt for Git).
 
@@ -29,6 +31,18 @@ function Update-PathFromRegistry {
 }
 
 function Have([string]$cmd) { [bool](Get-Command $cmd -ErrorAction SilentlyContinue) }
+
+function Have-Python {
+    # A real Python 3.10+: the Microsoft Store stub fails this check.
+    $ErrorActionPreference = 'Continue'
+    foreach ($c in 'py', 'python') {
+        if (Have $c) {
+            & $c -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>$null
+            if ($LASTEXITCODE -eq 0) { return $true }
+        }
+    }
+    return $false
+}
 
 Step 'Git for Windows'
 if (Have 'git') {
@@ -53,6 +67,17 @@ if (Have 'claude') {
     Write-Host 'installed'
 }
 
+Step 'Python 3 (for the hooks and the ig-* skills)'
+if (Have-Python) {
+    Write-Host 'already installed'
+} elseif (Have 'winget') {
+    winget install -e --id Python.Python.3.13 --scope user --accept-source-agreements --accept-package-agreements
+    Update-PathFromRegistry
+    if (Have-Python) { Write-Host 'installed' } else { Write-Warning 'Python was installed but is not on PATH yet. Open a new PowerShell window and run this again to wire the hooks.' }
+} else {
+    Write-Warning 'winget is missing: install Python 3 from https://www.python.org/downloads/ and run this again to wire the hooks.'
+}
+
 Step "Toolkit in $toolkit"
 if (Test-Path (Join-Path $toolkit '.git')) {
     git -C $toolkit pull --ff-only
@@ -64,7 +89,7 @@ if (Test-Path (Join-Path $toolkit '.git')) {
     if ($LASTEXITCODE -ne 0) { throw "git clone of $repo failed" }
 }
 
-Step 'Agents and skills into ~/.claude'
+Step 'Agents, skills, hooks and settings into ~/.claude'
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $toolkit 'install.ps1')
 if ($LASTEXITCODE -ne 0) { throw "install.ps1 failed with exit code $LASTEXITCODE" }
 

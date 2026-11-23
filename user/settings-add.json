@@ -1,0 +1,93 @@
+{
+  "cleanupPeriodDays": 3650,
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(~/**/.env)",
+      "Read(~/**/.env.*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"{PYTHON}\" \"{CLAUDE}/hooks/no_delete.py\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"{PYTHON}\" \"{CLAUDE}/hooks/sekrety_git.py\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"{PYTHON}\" \"{CLAUDE}/hooks/posle_szhatiya.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"{PYTHON}\" \"{CLAUDE}/hooks/razmer_konteksta.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "skillOverrides": {
+    "anthropic-skills:docx": "name-only",
+    "anthropic-skills:pptx": "name-only",
+    "anthropic-skills:xlsx": "name-only",
+    "anthropic-skills:pdf": "name-only",
+    "anthropic-skills:deep-research": "name-only",
+    "anthropic-skills:skill-creator": "name-only",
+    "anthropic-skills:chrome-browser": "name-only",
+    "anthropic-skills:built-in-browser": "name-only",
+    "anthropic-skills:computer-use": "name-only",
+    "dataviz": "name-only",
+    "claude-api": "name-only",
+    "update-config": "name-only",
+    "artifact-design": "name-only",
+    "artifact-diagramming": "name-only",
+    "artifact-capabilities": "name-only",
+    "loop": "name-only",
+    "schedule": "name-only",
+    "security-review": "name-only",
+    "simplify": "name-only",
+    "init": "name-only",
+    "run": "name-only",
+    "keybindings-help": "name-only",
+    "fewer-permission-prompts": "name-only",
+    "openai-api-key": "name-only",
+    "mod-dev": "name-only",
+    "ig-audit": "name-only",
+    "ig-caption": "name-only",
+    "ig-carousel": "name-only",
+    "ig-comment": "name-only",
+    "ig-dm": "name-only",
+    "ig-human": "name-only",
+    "ig-plan": "name-only",
+    "ig-profile": "name-only",
+    "ig-reel": "name-only",
+    "ig-reply": "name-only",
+    "ig-repurpose": "name-only",
+    "ig-story": "name-only",
+    "ig-viral": "name-only"
+  }
+}
